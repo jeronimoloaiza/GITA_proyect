@@ -10,32 +10,26 @@ from PIL import Image
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
 
-def get_uploaded_image(uploader):
+def get_uploaded_image(file_path):
     """
-    Loads an uploaded image from a Jupyter FileUpload widget and converts it to a normalized RGB array.
+    Loads an image from a file path and converts it to a normalized RGB array.
 
     Parameters
     ----------
-    uploader : widgets.FileUpload
-        FileUpload widget containing the uploaded image.
+    file_path : str
+        Path to the image file.
 
     Returns
     -------
-    np.ndarray or None
-        RGB image as a NumPy array with float32 values in [0, 1] range.
-        Returns None if no file is uploaded.
+    tuple
+        - np.ndarray: RGB image as float32 in [0, 1]
+        - np.ndarray: Green channel as float32 in [0, 1]
     """
+    img = Image.open(file_path).convert("RGB")
+    img = np.array(img).astype(np.float32) / 255.0
+    green_channel = img[:, :, 1]
+    return img, green_channel
 
-    if uploader.value:
-        # Get first uploaded file (UploadedFile object)
-        file_info = uploader.value[0]
-        img = Image.open(io.BytesIO(file_info.content)).convert("RGB")
-        img = np.array(img).astype(np.float32) / 255.0
-        green_channel = img[:, :, 1]
-        return img, green_channel
-    else:
-        print("No file uploaded yet.")
-        return None, None
 
 # testing
 
@@ -45,10 +39,14 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     image_path = r"C:\Users\User\Documents\UdeA\GITA\graphene-segmentation\graphene-segmentation\assets\100x_04.jpg"
-    image = Image.open(image_path).convert("RGB")
-    image_np = np.array(image).astype(np.float32) / 255.0
+    image, green_image = get_uploaded_image(image_path)
 
-    plt.imshow(image_np)
+    plt.imshow(image)
     plt.title("Loaded image from assets/")
+    plt.axis("off")
+    plt.show()
+
+    plt.imshow(green_image, cmap="gray")
+    plt.title("Green channel")
     plt.axis("off")
     plt.show()
