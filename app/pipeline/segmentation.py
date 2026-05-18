@@ -3,10 +3,114 @@ Module: segmentation
 Provides ROI selection and multi-Otsu segmentation.
 
 """
-import cv2
 import numpy as np
 from skimage.filters import threshold_multiotsu
-import matplotlib.pyplot as plt
+from PyQt5.QtCore import QPoint, QRect, Qt
+from PyQt5.QtGui import QImage, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+)
+
+
+class _ROIImageLabel(QLabel):
+    def __init__(self, pixmap):
+        super().__init__()
+        self.setPixmap(pixmap)
+        self.setFixedSize(pixmap.size())
+        self._start = None
+        self._end = None
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self._start = event.pos()
+            self._end = event.pos()
+            self.update()
+
+    def mouseMoveEvent(self, event):
+        if self._start is not None:
+            self._end = event.pos()
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton and self._start is not None:
+            self._end = event.pos()
+            self.update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self._start is None or self._end is None:
+            return
+        rect = QRect(self._start, self._end).normalized()
+        painter = QPainter(self)
+        painter.setPen(QPen(Qt.red, 2, Qt.DashLine))
+        painter.drawRect(rect)
+        painter.end()
+
+    def selected_rect(self):
+        if self._start is None or self._end is None:
+            return None
+        rect = QRect(self._start, self._end).normalized()
+        if rect.width() <= 1 or rect.height() <= 1:
+            return None
+        x1 = max(0, rect.left())
+        y1 = max(0, rect.top())
+        x2 = min(self.width(), rect.right() + 1)
+        y2 = min(self.height(), rect.bottom() + 1)
+        if x2 <= x1 or y2 <= y1:
+            return None
+        return x1, y1, x2, y2
+
+
+class _ROISelectionDialog(QDialog):
+    def __init__(self, image_gray, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select ROI")
+        self._coords = None
+
+        img_uint8 = (np.clip(image_gray, 0, 1) * 255).astype(np.uint8)
+        h, w = img_uint8.shape
+        qimg = QImage(img_uint8.data, w, h, w, QImage.Format_Grayscale8).copy()
+        pixmap = QPixmap.fromImage(qimg)
+
+        self.image_label = _ROIImageLabel(pixmap)
+        scroll = QScrollArea()
+        scroll.setWidget(self.image_label)
+        scroll.setWidgetResizable(False)
+
+        instructions = QLabel("Click y arrastra para seleccionar ROI. Luego presiona Confirmar.")
+
+        confirm_btn = QPushButton("Confirmar")
+        cancel_btn = QPushButton("Cancelar")
+        confirm_btn.clicked.connect(self._confirm)
+        cancel_btn.clicked.connect(self.reject)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(confirm_btn)
+        button_layout.addWidget(cancel_btn)
+
+        layout = QVBoxLayout()
+        layout.addWidget(instructions)
+        layout.addWidget(scroll)
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+        self.resize(min(w + 100, 1200), min(h + 140, 900))
+
+    def _confirm(self):
+        rect = self.image_label.selected_rect()
+        if rect is None:
+            QMessageBox.warning(self, "ROI inválido", "Selecciona una región válida antes de confirmar.")
+            return
+        self._coords = rect
+        self.accept()
+
+    def coords(self):
+        return self._coords
 
 def select_roi(image_gray):
     """
@@ -24,13 +128,18 @@ def select_roi(image_gray):
         - np.ndarray: Cropped region of interest (ROI)
         - tuple: Coordinates as (x1, y1, x2, y2)
     """
-    img_uint8 = (image_gray * 255).astype("uint8")
-    cv2.namedWindow("Select ROI", cv2.WINDOW_NORMAL)
-    r = cv2.selectROI("Select ROI", img_uint8, showCrosshair=True)
-    cv2.destroyAllWindows()
-    x, y, w, h = r
-    roi = image_gray[y:y+h, x:x+w]
-    coords = (x, y, x+w, y+h)
+    dialog = _ROISelectionDialog(image_gray)
+    if dialog.exec_() != QDialog.Accepted:
+        raise ValueError("No ROI was selected. Selection was cancelled.")
+
+    coords = dialog.coords()
+    if coords is None:
+        raise ValueError("No ROI was selected. Please select a valid region.")
+
+    x1, y1, x2, y2 = coords
+    roi = image_gray[y1:y2, x1:x2]
+    if roi.size == 0:
+        raise ValueError("Selected ROI has zero area. Please select a valid region.")
     return roi, coords
 
 def segment_multi_otsu(img_gray, n_classes=3):
@@ -54,43 +163,3 @@ def segment_multi_otsu(img_gray, n_classes=3):
     thresholds = threshold_multiotsu(img_gray, classes=n_classes)
     segmented = np.digitize(img_gray, bins=thresholds)
     return segmented, thresholds
-
-# testing
-
-if __name__ == "__main__":
-    from PIL import Image
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    image_path = r"C:\Users\User\Documents\UdeA\GITA\graphene-segmentation\graphene-segmentation\assets\100x_04.jpg"
-    image = Image.open(image_path).convert("RGB")
-    image_np = np.array(image).astype(np.float32) / 255.0
-
-    green_channel = image_np[:, :, 1]
-
-    roi_img = select_roi(green_channel)
-    segmented, thresholds = segment_multi_otsu(roi_img, n_classes=4)
-
-    print("Thresholds:", thresholds)
-
-    plt.figure(figsize=(12, 6))
-    plt.subplot(1, 3, 1)
-    plt.imshow(roi_img, cmap='gray')
-    plt.title("Selected ROI")
-    plt.axis("off")
-
-    plt.subplot(1, 3, 2)
-    plt.imshow(segmented, cmap='nipy_spectral')
-    plt.title("Segmented Image")
-    plt.axis("off")
-
-    plt.subplot(1, 3, 3)
-    plt.hist(roi_img.ravel(), bins=256)
-    for t in thresholds:
-        plt.axvline(t, color='r', linestyle='--')
-    plt.title("Histogram with Thresholds")
-    plt.xlabel("Pixel Intensity")
-    plt.ylabel("Frequency")
-
-    plt.tight_layout()
-    plt.show()

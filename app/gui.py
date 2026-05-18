@@ -5,8 +5,6 @@ Desktop GUI for graphene segmentation using PyQt5.
 """
 
 import sys
-import matplotlib
-matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QSpinBox
 )
@@ -87,12 +85,17 @@ class GrapheneApp(QWidget):
             self.label.setText("Primero debes cargar una imagen.")
             return
         self.label.setText("Selecciona una región con suficiente fondo para mejorar la clasificación.")
-        self.roi, self.roi_coords = select_roi(self.image_green)
-        show_selected_roi(self.image_rgb, self.roi_coords)
-        self.label.setText("ROI seleccionado.")
-        self.class_count_label.setEnabled(True)
-        self.class_count_input.setEnabled(True)
-        self.segment_btn.setEnabled(True)
+        try:
+            self.roi, self.roi_coords = select_roi(self.image_green)
+            show_selected_roi(self.image_rgb, self.roi_coords)
+            self.label.setText("ROI seleccionado.")
+            self.class_count_label.setEnabled(True)
+            self.class_count_input.setEnabled(True)
+            self.segment_btn.setEnabled(True)
+        except ValueError as e:
+            self.label.setText(str(e))
+        except Exception as e:
+            self.label.setText(f"Error al seleccionar ROI: {e}")
 
     def segment_roi(self):
         if self.roi is None:
