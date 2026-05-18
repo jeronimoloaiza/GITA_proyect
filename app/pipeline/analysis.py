@@ -5,10 +5,8 @@ Visualizes segmentation overlays and computes physical classification based on c
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
 from skimage import measure
+from app.pipeline.visualization import show_classification_overlay
 
 def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, background_class, min_size=50):
     """
@@ -44,8 +42,17 @@ def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, bac
 
     background_intensity = np.median(img_gray[segmented == background_class])
     class_labels = [label for label in np.unique(segmented) if label != background_class]
-    base_colors = list(mcolors.TABLEAU_COLORS.values()) + list(mcolors.CSS4_COLORS.values())
-    class_colors = {label: mcolors.to_rgb(base_colors[i % len(base_colors)]) for i, label in enumerate(class_labels)}
+    base_colors = [
+        (0.90, 0.10, 0.30),
+        (0.20, 0.70, 0.30),
+        (0.95, 0.85, 0.15),
+        (0.10, 0.50, 0.90),
+        (0.95, 0.45, 0.20),
+        (0.55, 0.20, 0.70),
+        (0.25, 0.80, 0.80),
+        (0.90, 0.20, 0.70),
+    ]
+    class_colors = {label: base_colors[i % len(base_colors)] for i, label in enumerate(class_labels)}
 
     overlay_rgb = np.zeros((*segmented.shape, 3), dtype=np.float32)
     legend_entries = []
@@ -89,50 +96,13 @@ def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, bac
             "Clasification": layer_type
         })
 
-    # triple panel visualization
-    fig, axs = plt.subplots(1, 3, figsize=(18,6))
-
-    axs[0].imshow(img_gray, cmap="gray")
-    axs[0].imshow(overlay_rgb, alpha=0.4)
-    axs[0].set_title("overlay by class and physical interpretation")
-    axs[0].axis("off")
-    handles = [mpatches.Patch(color=color, label=label) for label, color in legend_entries]
-    axs[0].legend(handles=handles, loc="lower right", framealpha=0.9)
-
-    axs[1].imshow(img_gray, cmap="gray")
-    axs[1].set_title("original ROI for segmentation")
-    axs[1].axis("off")
-
-    axs[2].imshow(full_image)
-    axs[2].set_title("original full microscopy image")
-    axs[2].axis("off")
-
-    plt.tight_layout()
-    plt.show()
+    show_classification_overlay(
+        img_gray=img_gray,
+        overlay_rgb=overlay_rgb,
+        full_image=full_image,
+        legend_entries=legend_entries,
+    )
 
     # Convert to DataFrame
     df_results = pd.DataFrame(results)
     return df_results
-
-# testing
-
-if __name__ == "__main__":
-    from PIL import Image
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    image_path = r"C:\Users\User\Documents\UdeA\GITA\graphene-segmentation\graphene-segmentation\assets\100x_04.jpg"
-    image = Image.open(image_path).convert("RGB")
-    image_np = np.array(image).astype(np.float32) / 255.0
-
-    green_channel = image_np[:, :, 1]
-
-    # Simulated segmented image for testing
-    segmented = np.zeros_like(green_channel, dtype=np.int32)
-    segmented[50:150, 50:150] = 1  # Class 1
-    segmented[200:300, 200:300] = 2  # Class 2
-    segmented[350:450, 350:450] = 3  # Class 3
-    background_class = 0
-
-    df_results = visualize_overlay_by_class_and_contrast(segmented, green_channel, image_np, background_class)
-    print(df_results)
