@@ -149,13 +149,29 @@ QWidget#segmentationWorkspace {
   background: #cfd5dc;
 }
 
+QWidget#opticalSimulationWorkspace {
+  background: #dbe7ee;
+}
+
 QFrame#controlPanel {
   background: #ffffff;
   border-radius: 16px;
   border: 1px solid #e5ebf3;
 }
 
+QFrame#simulationControlPanel {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5ebf3;
+}
+
 QFrame#displayPanel {
+  background: #d6dbe2;
+  border-radius: 16px;
+  border: 1px solid #cad1db;
+}
+
+QWidget#simulationDisplayPanel {
   background: #d6dbe2;
   border-radius: 16px;
   border: 1px solid #cad1db;
@@ -171,6 +187,31 @@ QLabel#feedbackLabel,
 QLabel#displayHint,
 QLabel#cardTitle {
   color: #56606f;
+}
+
+QLabel#sectionTitle {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #0f1720;
+}
+
+QLabel#fieldLabel {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #3c4956;
+}
+
+QLineEdit,
+QComboBox,
+QDoubleSpinBox {
+  background: white;
+  border: 1px solid #d6e1ef;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+QComboBox::drop-down {
+  border: 0px;
 }
 
 QTableWidget#analysisTable {

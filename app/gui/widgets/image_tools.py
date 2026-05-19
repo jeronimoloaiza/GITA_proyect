@@ -40,6 +40,41 @@ def fit_pixmap(pixmap, max_width, max_height):
     return pixmap.scaled(max_width, max_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
 
+def figure_to_pixmap(figure, width=420, height=280):
+    """Render a Matplotlib figure into a QPixmap.
+
+    Parameters
+    ----------
+    figure : matplotlib.figure.Figure
+        Figure to render.
+    width : int, optional
+        Output width in pixels. Default is 420.
+    height : int, optional
+        Output height in pixels. Default is 280.
+
+    Returns
+    -------
+    QPixmap
+        Rendered figure image.
+    """
+
+    canvas = FigureCanvas(figure)
+    # Set target size in inches (assume 100 px/in by default)
+    figure.set_size_inches(width / 100.0, height / 100.0, forward=True)
+    # Ensure tight layout so labels/titles are not clipped after resize
+    try:
+        figure.tight_layout()
+    except Exception:
+        # If tight_layout fails for any reason, continue and let drawing proceed
+        pass
+    canvas.draw()
+    # Use canvas reported pixel dimensions to construct the QImage correctly
+    canvas_width, canvas_height = canvas.get_width_height()
+    buffer = np.asarray(canvas.buffer_rgba())
+    qimg = QImage(buffer.data, canvas_width, canvas_height, 4 * canvas_width, QImage.Format_RGBA8888).copy()
+    return QPixmap.fromImage(qimg)
+
+
 def histogram_pixmap(image_gray, thresholds, width=420, height=280):
     image_gray = np.clip(image_gray, 0, 1)
     fig = Figure(figsize=(width / 100.0, height / 100.0), dpi=100)
