@@ -129,12 +129,12 @@ class SegmentationWorkspace(QWidget):
             self.on_error("Faltan datos para clasificar.")
             return
 
-        df_results, overlay_rgb, _legend_entries = analyze_contrast(
+        df_results, overlay_rgb, legend_entries = analyze_contrast(
             segmented=state.segmented,
             img_gray=state.roi,
             background_class=state.background_class,
         )
-        self.display_panel.show_classification_results(state, df_results, overlay_rgb)
+        self.display_panel.show_classification_results(state, df_results, overlay_rgb, legend_entries)
 
     def on_error(self, msg: str):
         self.control_panel.set_feedback(msg)

@@ -190,10 +190,23 @@ class SegmentationDisplayPanel(QWidget):
 
         cards = QHBoxLayout()
         cards.setSpacing(12)
+        overlay_box = QVBoxLayout()
+        overlay_box.setSpacing(8)
+
         self.cls_overlay_card = ImageCard("Overlay clasificado")
+        self.cls_overlay_legend = QLabel("Leyenda no disponible.")
+        self.cls_overlay_legend.setWordWrap(True)
+        self.cls_overlay_legend.setObjectName("displayHint")
+        self.cls_overlay_legend.setTextFormat(Qt.RichText)
+        overlay_box.addWidget(self.cls_overlay_card)
+        overlay_box.addWidget(self.cls_overlay_legend)
+
+        overlay_wrapper = QWidget()
+        overlay_wrapper.setLayout(overlay_box)
+
         self.cls_roi_card = ImageCard("ROI original")
         self.cls_full_card = ImageCard("Imagen completa")
-        cards.addWidget(self.cls_overlay_card, 1)
+        cards.addWidget(overlay_wrapper, 1)
         cards.addWidget(self.cls_roi_card, 1)
         cards.addWidget(self.cls_full_card, 1)
         layout.addLayout(cards)
@@ -248,11 +261,12 @@ class SegmentationDisplayPanel(QWidget):
             "El siguiente paso es clasificar por contraste."
         )
 
-    def show_classification_results(self, state, df_results, overlay_rgb):
+    def show_classification_results(self, state, df_results, overlay_rgb, legend_entries=None):
         self.right_stack.setCurrentWidget(self.classification_page)
         self.cls_overlay_card.set_rgb_image(overlay_rgb, 360, 260)
         self.cls_roi_card.set_gray_image(state.roi, 360, 260)
         self.cls_full_card.set_rgb_image(state.image_rgb, 360, 260)
+        self.cls_overlay_legend.setText(self._format_legend_entries(legend_entries))
 
         self.analysis_table.setRowCount(0)
         if df_results is not None and not df_results.empty:
@@ -275,6 +289,21 @@ class SegmentationDisplayPanel(QWidget):
             self.analysis_table.setHorizontalHeaderLabels(["Info"])
             self.analysis_table.setItem(0, 0, QTableWidgetItem("No valid classes found for contrast analysis."))
             self.class_summary_label.setText("No se encontraron clases válidas para el análisis de contraste.")
+
+    def _format_legend_entries(self, legend_entries):
+        if not legend_entries:
+            return "Leyenda no disponible."
+
+        items = []
+        for label, color in legend_entries:
+            red = int(round(color[0] * 255))
+            green = int(round(color[1] * 255))
+            blue = int(round(color[2] * 255))
+            hex_color = f"#{red:02x}{green:02x}{blue:02x}"
+            items.append(
+                f'<div><span style="color:{hex_color}; font-size:16px;">&#9632;</span> {label}</div>'
+            )
+        return "<div><b>Leyenda:</b></div>" + "".join(items)
 
     def _label_to_rgb(self, segmented):
         palette = np.array(
