@@ -33,7 +33,13 @@ python -m app.gui
 
 ## 📝 How does the app work?
 
-The application allows you to segment and analyze optical images of graphene as follows:
+At startup, the desktop app shows a **workspace selector** to choose one of these flows:
+
+1. **Segmentation (optical contrast)**: Current functional flow for image segmentation and layer classification.
+2. **Optical contrast simulation**: Base workspace created for future physical/optical simulation tools.
+3. **Raman analysis**: Base workspace created for future Raman spectra preprocessing and analysis.
+
+### Current implemented workflow (Segmentation)
 
 1. **Image upload**: Select an optical microscopy image (JPG, PNG).
 2. **Preprocessing**: The green channel is extracted and filtered to enhance contrast.
@@ -45,8 +51,12 @@ The application allows you to segment and analyze optical images of graphene as 
 ## 📦 Project Structure
 
 - `app/` Main source code
-  - `gui.py` Graphical user interface (PyQt5)
-  - `pipeline/` Modules for loading, preprocessing, segmentation, analysis, and visualization
+   - `gui.py` Main application shell and workspace selector (PySide6)
+   - `modules/` UI workspaces
+      - `segmentation_workspace.py` Functional segmentation workspace
+      - `optical_simulation_workspace.py` Base workspace for optical simulation
+      - `raman_workspace.py` Base workspace for Raman analysis
+   - `pipeline/` Modules for loading, preprocessing, segmentation, analysis, and visualization
 - `assets/` Example images and resources
 - `colab-pipeline/` Notebook for Google Colab experiments
 - `tests/` Automated tests (if applicable)

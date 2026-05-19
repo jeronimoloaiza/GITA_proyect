@@ -92,17 +92,19 @@ def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, bac
         legend_entries.append((f"Class {label}: {layer_type}", color))
         results.append({
             "Class": label,
+            "Area (px)": int(region.area),
             "Contrast (%)": round(contrast, 2),
-            "Clasification": layer_type
+            "Classification": layer_type,
         })
+
+    df_results = pd.DataFrame(results)
 
     show_classification_overlay(
         img_gray=img_gray,
         overlay_rgb=overlay_rgb,
         full_image=full_image,
         legend_entries=legend_entries,
+        results_df=df_results,
     )
 
-    # Convert to DataFrame
-    df_results = pd.DataFrame(results)
     return df_results
