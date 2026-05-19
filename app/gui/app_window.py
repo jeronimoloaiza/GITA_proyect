@@ -10,30 +10,35 @@ from PySide6.QtWidgets import (
     QStackedWidget,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QPalette, QColor, QFont
 
-from app.modules import SegmentationWorkspace, OpticalSimulationWorkspace, RamanWorkspace
+from app.modules.segmentation_workspace import SegmentationWorkspace
+from app.modules.optical_simulation_workspace import OpticalSimulationWorkspace
+from app.modules.raman_workspace import RamanWorkspace
 
 
 class HomeSelector(QWidget):
     def __init__(self, on_segmentation, on_optical_sim, on_raman):
         super().__init__()
         layout = QVBoxLayout()
-
         title = QLabel("Plataforma de análisis de grafeno")
+        title.setObjectName("homeTitle")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: 600;")
-
         subtitle = QLabel("Selecciona el flujo de trabajo")
+        subtitle.setObjectName("homeSubtitle")
         subtitle.setAlignment(Qt.AlignCenter)
 
         segmentation_btn = QPushButton("Segmentación (contraste óptico)")
+        segmentation_btn.setObjectName("segmentationBtn")
         segmentation_btn.clicked.connect(on_segmentation)
 
         optical_btn = QPushButton("Simulación de contraste óptico")
+        optical_btn.setObjectName("opticalBtn")
         optical_btn.clicked.connect(on_optical_sim)
 
         raman_btn = QPushButton("Análisis Raman")
+        raman_btn.setObjectName("ramanBtn")
         raman_btn.clicked.connect(on_raman)
 
         layout.addWidget(title)
@@ -51,7 +56,8 @@ class GrapheneApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Graphene Analysis Platform")
-        self.setGeometry(100, 100, 520, 460)
+        self.setGeometry(100, 100, 1180, 800)
+        self.setMinimumSize(1060, 720)
 
         layout = QVBoxLayout()
         self.stack = QStackedWidget()
@@ -89,6 +95,17 @@ class GrapheneApp(QWidget):
 def run_app():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+
+    # Set a modern default font (fallbacks in case font not available)
+    app.setFont(QFont("Segoe UI", 10))
+
+    # Load the QSS stylesheet if available
+    try:
+        with open("app/gui/style.qss", "r") as f:
+            app.setStyleSheet(f.read())
+    except Exception:
+        # if stylesheet not found, continue with palette and defaults
+        pass
 
     palette = QPalette()
     palette.setColor(QPalette.Window, QColor(240, 240, 240))

@@ -87,6 +87,8 @@ class _ROISelectionDialog(QDialog):
 
         confirm_btn = QPushButton("Confirmar")
         cancel_btn = QPushButton("Cancelar")
+        confirm_btn.setObjectName("confirmBtn")
+        cancel_btn.setObjectName("cancelBtn")
         confirm_btn.clicked.connect(self._confirm)
         cancel_btn.clicked.connect(self.reject)
 

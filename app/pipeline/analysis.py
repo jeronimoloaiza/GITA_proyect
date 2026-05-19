@@ -8,6 +8,74 @@ import pandas as pd
 from skimage import measure
 from app.pipeline.visualization import show_classification_overlay
 
+
+def analyze_contrast(segmented, img_gray, background_class, min_size=50):
+    """Compute contrast-based class classification and overlay data.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, np.ndarray, list[tuple[str, tuple[float, float, float]]]]
+        DataFrame with per-class metrics, RGB overlay image, and legend entries.
+    """
+
+    background_intensity = np.median(img_gray[segmented == background_class])
+    class_labels = [label for label in np.unique(segmented) if label != background_class]
+    base_colors = [
+        (0.90, 0.10, 0.30),
+        (0.20, 0.70, 0.30),
+        (0.95, 0.85, 0.15),
+        (0.10, 0.50, 0.90),
+        (0.95, 0.45, 0.20),
+        (0.55, 0.20, 0.70),
+        (0.25, 0.80, 0.80),
+        (0.90, 0.20, 0.70),
+    ]
+    class_colors = {label: base_colors[i % len(base_colors)] for i, label in enumerate(class_labels)}
+
+    overlay_rgb = np.zeros((*segmented.shape, 3), dtype=np.float32)
+    legend_entries = []
+    results = []
+
+    for label in class_labels:
+        mask = (segmented == label)
+        labeled = measure.label(mask)
+        regions = [r for r in measure.regionprops(labeled, intensity_image=img_gray) if r.area >= min_size]
+
+        if not regions:
+            continue
+
+        region = max(regions, key=lambda r: r.area)
+        contrast = (background_intensity - region.mean_intensity) / background_intensity * 100
+
+        if 4 <= contrast <= 8:
+            layer_type = "1 layer"
+        elif 8 < contrast <= 11:
+            layer_type = "2 layers"
+        elif 11 < contrast <= 15:
+            layer_type = "3 layers"
+        elif 15 < contrast <= 18:
+            layer_type = "4 layers"
+        elif 18 < contrast <= 21:
+            layer_type = "5 layers"
+        elif contrast > 21:
+            layer_type = "graphite"
+        else:
+            layer_type = "graphite"
+
+        color = class_colors[label]
+        for c in range(3):
+            overlay_rgb[:, :, c] += ((segmented == label) * color[c]).astype(np.float32)
+
+        legend_entries.append((f"Class {label}: {layer_type}", color))
+        results.append({
+            "Class": label,
+            "Area (px)": int(region.area),
+            "Contrast (%)": round(contrast, 2),
+            "Classification": layer_type,
+        })
+
+    return pd.DataFrame(results), overlay_rgb, legend_entries
+
 def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, background_class, min_size=50):
     """
     Displays a three-panel visualization of segmented regions and their physical interpretation based on contrast analysis.
@@ -40,64 +108,12 @@ def visualize_overlay_by_class_and_contrast(segmented, img_gray, full_image, bac
         Table containing class label, region area, contrast percentage, and physical classification.
     """
 
-    background_intensity = np.median(img_gray[segmented == background_class])
-    class_labels = [label for label in np.unique(segmented) if label != background_class]
-    base_colors = [
-        (0.90, 0.10, 0.30),
-        (0.20, 0.70, 0.30),
-        (0.95, 0.85, 0.15),
-        (0.10, 0.50, 0.90),
-        (0.95, 0.45, 0.20),
-        (0.55, 0.20, 0.70),
-        (0.25, 0.80, 0.80),
-        (0.90, 0.20, 0.70),
-    ]
-    class_colors = {label: base_colors[i % len(base_colors)] for i, label in enumerate(class_labels)}
-
-    overlay_rgb = np.zeros((*segmented.shape, 3), dtype=np.float32)
-    legend_entries = []
-    results = []
-
-    for label in class_labels:
-        mask = (segmented == label)
-        labeled = measure.label(mask)
-        regions = [r for r in measure.regionprops(labeled, intensity_image=img_gray) if r.area >= min_size]
-
-        if not regions:
-            continue
-
-        region = max(regions, key=lambda r: r.area)
-        contrast = (background_intensity - region.mean_intensity) / background_intensity * 100
-
-        # Clasificación física extendida
-        if 4 <= contrast <= 8:
-            layer_type = "1 layer"
-        elif 8 < contrast <= 11:
-            layer_type = "2 layers"
-        elif 11 < contrast <= 15:
-            layer_type = "3 layers"
-        elif 15 < contrast <= 18:
-            layer_type = "4 layers"
-        elif 18 < contrast <= 21:
-            layer_type = "5 layers"
-        elif contrast > 21:
-            layer_type = "graphite"
-        else:
-            layer_type = "graphite"
-
-        color = class_colors[label]
-        for c in range(3):
-            overlay_rgb[:, :, c] += ((segmented == label) * color[c]).astype(np.float32)
-
-        legend_entries.append((f"Class {label}: {layer_type}", color))
-        results.append({
-            "Class": label,
-            "Area (px)": int(region.area),
-            "Contrast (%)": round(contrast, 2),
-            "Classification": layer_type,
-        })
-
-    df_results = pd.DataFrame(results)
+    df_results, overlay_rgb, legend_entries = analyze_contrast(
+        segmented=segmented,
+        img_gray=img_gray,
+        background_class=background_class,
+        min_size=min_size,
+    )
 
     show_classification_overlay(
         img_gray=img_gray,
