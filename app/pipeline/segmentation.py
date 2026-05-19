@@ -5,9 +5,9 @@ Provides ROI selection and multi-Otsu segmentation.
 """
 import numpy as np
 from skimage.filters import threshold_multiotsu
-from PyQt5.QtCore import QPoint, QRect, Qt
-from PyQt5.QtGui import QImage, QPainter, QPen, QPixmap
-from PyQt5.QtWidgets import (
+from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtGui import QImage, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -129,7 +129,7 @@ def select_roi(image_gray):
         - tuple: Coordinates as (x1, y1, x2, y2)
     """
     dialog = _ROISelectionDialog(image_gray)
-    if dialog.exec_() != QDialog.Accepted:
+    if dialog.exec() != QDialog.Accepted:
         raise ValueError("No ROI was selected. Selection was cancelled.")
 
     coords = dialog.coords()

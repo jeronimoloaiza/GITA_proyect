@@ -1,13 +1,17 @@
 """
 Module: visualization
 Handles graphical display of image loading, ROI selection, segmentation previews,
-and classification overlays using PyQt5.
+and classification overlays.
+
+ROI rendering stays in PySide6 (Qt). Other plots are displayed with Matplotlib.
 """
 
 import numpy as np
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QImage, QPainter, QPen, QPixmap
-from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
 
 def _to_uint8_rgb(image_rgb):
@@ -36,68 +40,6 @@ def _gray_to_qpixmap(image_gray):
     return QPixmap.fromImage(qimg)
 
 
-def _label_to_rgb(segmented):
-    palette = np.array(
-        [
-            [0, 0, 0],
-            [230, 25, 75],
-            [60, 180, 75],
-            [255, 225, 25],
-            [0, 130, 200],
-            [245, 130, 48],
-            [145, 30, 180],
-            [70, 240, 240],
-            [240, 50, 230],
-            [210, 245, 60],
-            [250, 190, 190],
-        ],
-        dtype=np.uint8,
-    )
-    labels = segmented.astype(np.int32)
-    labels = np.clip(labels, 0, len(palette) - 1)
-    return palette[labels]
-
-
-def _build_histogram_pixmap(image_gray, thresholds, width=420, height=280):
-    image_gray = np.clip(image_gray, 0, 1)
-    hist, _ = np.histogram(image_gray.ravel(), bins=256, range=(0, 1))
-    max_count = max(int(hist.max()), 1)
-
-    pixmap = QPixmap(width, height)
-    pixmap.fill(Qt.white)
-    painter = QPainter(pixmap)
-
-    margin_left, margin_right, margin_top, margin_bottom = 40, 10, 20, 30
-    plot_w = width - margin_left - margin_right
-    plot_h = height - margin_top - margin_bottom
-
-    painter.setPen(QPen(Qt.black, 1))
-    painter.drawRect(margin_left, margin_top, plot_w, plot_h)
-
-    painter.setPen(QPen(Qt.black, 1))
-    points = []
-    for i, count in enumerate(hist):
-        x = margin_left + int(i / 255.0 * plot_w)
-        y = margin_top + plot_h - int((count / max_count) * plot_h)
-        points.append((x, y))
-
-    for i in range(len(points) - 1):
-        painter.drawLine(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1])
-
-    painter.setPen(QPen(Qt.red, 2, Qt.DashLine))
-    for thresh in thresholds:
-        t = float(np.clip(thresh, 0, 1))
-        x = margin_left + int(t * plot_w)
-        painter.drawLine(x, margin_top, x, margin_top + plot_h)
-
-    painter.setPen(QPen(Qt.black, 1))
-    painter.drawText(10, 15, "Histogram")
-    painter.drawText(5, height - 5, "0")
-    painter.drawText(width - 25, height - 5, "1")
-    painter.end()
-    return pixmap
-
-
 def _show_images_dialog(title, panels, min_width=1000, min_height=460):
     dialog = QDialog()
     dialog.setWindowTitle(title)
@@ -116,21 +58,22 @@ def _show_images_dialog(title, panels, min_width=1000, min_height=460):
 
     dialog.setLayout(layout)
     dialog.resize(min_width, min_height)
-    dialog.exec_()
+    dialog.exec()
 
 
 def show_loaded_image_and_green_channel(image_rgb):
-    rgb_pixmap = _rgb_to_qpixmap(image_rgb)
-    green_pixmap = _gray_to_qpixmap(image_rgb[:, :, 1])
-    _show_images_dialog(
-        "Imagen cargada",
-        [
-            ("Uploaded RGB image", rgb_pixmap),
-            ("Green channel", green_pixmap),
-        ],
-        min_width=900,
-        min_height=420,
-    )
+    fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+    axs[0].imshow(np.clip(image_rgb, 0, 1) if image_rgb.dtype != np.uint8 else image_rgb)
+    axs[0].set_title("Uploaded RGB image", fontsize=13)
+    axs[0].axis("off")
+
+    axs[1].imshow(image_rgb[:, :, 1], cmap="gray")
+    axs[1].set_title("Green channel", fontsize=13)
+    axs[1].axis("off")
+
+    fig.suptitle("Imagen cargada", fontsize=15)
+    plt.tight_layout()
+    plt.show()
 
 
 def show_selected_roi(image_rgb, roi_coords):
@@ -151,59 +94,73 @@ def show_selected_roi(image_rgb, roi_coords):
 
 
 def show_segmentation_and_histogram(image_gray, segmented, thresholds):
-    roi_pixmap = _gray_to_qpixmap(image_gray)
-    seg_rgb = _label_to_rgb(segmented)
-    segmented_pixmap = _rgb_to_qpixmap(seg_rgb)
-    hist_pixmap = _build_histogram_pixmap(image_gray, thresholds)
+    fig, axs = plt.subplots(1, 3, figsize=(20, 6))
 
-    _show_images_dialog(
-        "Segmentación ROI",
-        [
-            ("ROI (grayscale)", roi_pixmap),
-            ("Segmented ROI (Multi-Otsu)", segmented_pixmap),
-            ("Histogram with thresholds", hist_pixmap),
-        ],
-        min_width=1300,
-        min_height=480,
-    )
+    axs[0].imshow(image_gray, cmap="gray")
+    axs[0].set_title("ROI (grayscale)", fontsize=13)
+    axs[0].axis("off")
+
+    axs[1].imshow(segmented, cmap="tab20")
+    axs[1].set_title("Segmented ROI (Multi-Otsu)", fontsize=13)
+    axs[1].axis("off")
+
+    axs[2].hist(np.clip(image_gray, 0, 1).ravel(), bins=256, range=(0, 1), color="steelblue", alpha=0.85)
+    for thresh in thresholds:
+        axs[2].axvline(float(np.clip(thresh, 0, 1)), color="red", linestyle="--", linewidth=2)
+    axs[2].set_title("Histogram with thresholds", fontsize=13)
+    axs[2].set_xlabel("Intensity")
+    axs[2].set_ylabel("Pixel count")
+
+    fig.suptitle("Segmentación ROI", fontsize=15)
+    plt.tight_layout()
+    plt.show()
 
 
-def show_classification_overlay(img_gray, overlay_rgb, full_image, legend_entries):
+def show_classification_overlay(img_gray, overlay_rgb, full_image, legend_entries, results_df=None):
     alpha = 0.4
     gray_rgb = np.stack([img_gray, img_gray, img_gray], axis=-1)
     overlay_view = np.clip((1 - alpha) * gray_rgb + alpha * overlay_rgb, 0, 1)
 
-    overlay_pixmap = _rgb_to_qpixmap(overlay_view)
-    roi_pixmap = _gray_to_qpixmap(img_gray)
-    full_pixmap = _rgb_to_qpixmap(full_image)
+    fig = plt.figure(figsize=(20, 10))
+    gs = fig.add_gridspec(2, 3, height_ratios=[3.2, 1.4])
 
-    dialog = QDialog()
-    dialog.setWindowTitle("Clasificación por contraste")
-    main_layout = QVBoxLayout()
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax0.imshow(img_gray, cmap="gray")
+    ax0.imshow(overlay_rgb, alpha=0.4)
+    ax0.set_title("Overlay by class and physical interpretation", fontsize=13)
+    ax0.axis("off")
 
-    panels_layout = QHBoxLayout()
-    for panel_title, pixmap in [
-        ("Overlay by class and physical interpretation", overlay_pixmap),
-        ("Original ROI for segmentation", roi_pixmap),
-        ("Original full microscopy image", full_pixmap),
-    ]:
-        panel_layout = QVBoxLayout()
-        title_label = QLabel(panel_title)
-        title_label.setAlignment(Qt.AlignCenter)
-        image_label = QLabel()
-        image_label.setAlignment(Qt.AlignCenter)
-        image_label.setPixmap(pixmap)
-        panel_layout.addWidget(title_label)
-        panel_layout.addWidget(image_label)
-        panels_layout.addLayout(panel_layout)
+    if legend_entries:
+        handles = [mpatches.Patch(color=color, label=label) for label, color in legend_entries]
+        ax0.legend(handles=handles, loc="lower right", fontsize=10, framealpha=0.9)
 
-    legend_text = "\n".join([f"{entry[0]}" for entry in legend_entries]) if legend_entries else "No classes found"
-    legend_label = QLabel(legend_text)
-    legend_label.setStyleSheet("padding: 6px;")
+    ax1 = fig.add_subplot(gs[0, 1])
+    ax1.imshow(img_gray, cmap="gray")
+    ax1.set_title("Original ROI for segmentation", fontsize=13)
+    ax1.axis("off")
 
-    main_layout.addLayout(panels_layout)
-    main_layout.addWidget(QLabel("Legend:"))
-    main_layout.addWidget(legend_label)
-    dialog.setLayout(main_layout)
-    dialog.resize(1400, 700)
-    dialog.exec_()
+    ax2 = fig.add_subplot(gs[0, 2])
+    ax2.imshow(np.clip(full_image, 0, 1) if full_image.dtype != np.uint8 else full_image)
+    ax2.set_title("Original full microscopy image", fontsize=13)
+    ax2.axis("off")
+
+    ax_table = fig.add_subplot(gs[1, :])
+    ax_table.axis("off")
+    if results_df is not None and not results_df.empty:
+        display_df = results_df.sort_values(by="Contrast (%)", ascending=False).reset_index(drop=True)
+        table = ax_table.table(
+            cellText=display_df.values,
+            colLabels=display_df.columns,
+            loc="center",
+            cellLoc="center",
+        )
+        table.auto_set_font_size(False)
+        table.set_fontsize(11)
+        table.scale(1, 1.6)
+        ax_table.set_title("Summary by class", fontsize=13, pad=10)
+    else:
+        ax_table.text(0.5, 0.5, "No valid classes found for contrast analysis.", ha="center", va="center", fontsize=12)
+
+    fig.suptitle("Clasificación por contraste", fontsize=16)
+    plt.tight_layout()
+    plt.show()
