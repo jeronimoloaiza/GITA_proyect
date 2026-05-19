@@ -35,9 +35,25 @@ class SegmentationController(QObject):
             img, green = get_uploaded_image(path)
             self.state.image_rgb = img
             self.state.image_green = preprocess_green_channel(green)
+            self.state.roi = None
+            self.state.roi_coords = None
+            self.state.segmented = None
+            self.state.thresholds = None
+            self.state.background_class = None
             self.state_changed.emit(self.state)
         except Exception as e:
             self.error.emit(str(e))
+
+    def set_roi(self, roi, coords):
+        if self.state.image_green is None:
+            self.error.emit("Primero debes cargar una imagen.")
+            return
+        self.state.roi = roi
+        self.state.roi_coords = coords
+        self.state.segmented = None
+        self.state.thresholds = None
+        self.state.background_class = None
+        self.state_changed.emit(self.state)
 
     def select_roi(self):
         if self.state.image_green is None:

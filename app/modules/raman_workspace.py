@@ -11,6 +11,7 @@ class RamanWorkspace(QWidget):
     def __init__(self, on_back):
         super().__init__()
         self._on_back = on_back
+        self.setObjectName("workspace")
 
         layout = QVBoxLayout()
 
@@ -28,6 +29,7 @@ class RamanWorkspace(QWidget):
         status.setAlignment(Qt.AlignCenter)
 
         back_btn = QPushButton("← Volver al inicio")
+        back_btn.setObjectName("backBtn")
         back_btn.clicked.connect(self._on_back)
 
         layout.addWidget(title)

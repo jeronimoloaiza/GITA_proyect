@@ -1,0 +1,181 @@
+/* Modern QSS theme for Graphene Analysis Platform */
+
+/* Base window and backgrounds */
+QWidget {
+  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #f6f8fb, stop:1 #eef3f8);
+  color: #222629;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11pt;
+}
+
+/* Main titles */
+QLabel#homeTitle, QLabel#mainTitle {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #0f1720;
+}
+
+QLabel#homeSubtitle {
+  font-size: 11pt;
+  color: #3b4a57;
+}
+
+/* Buttons */
+QPushButton {
+  background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #5aa0ff, stop:1 #2b7de9);
+  color: white;
+  border-radius: 10px;
+  padding: 8px 14px;
+  border: 0px solid transparent;
+  min-height: 36px;
+  font-weight: 600;
+}
+QPushButton:hover {
+  background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #6fb0ff, stop:1 #3a8ef0);
+}
+QPushButton:pressed {
+  background-color: #1866d6;
+}
+
+/* Secondary flat buttons */
+QPushButton[flat="true"] {
+  background: transparent;
+  color: #2b7de9;
+}
+
+/* Spinbox */
+QSpinBox {
+  background: white;
+  border: 1px solid #d6e1ef;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+/* Dialogs */
+QDialog {
+  background: transparent;
+}
+
+/* Small helper text */
+QLabel {
+  color: #253238;
+}
+
+/* Make QTable (if embedded) legible */
+QTableWidget {
+  background: white;
+  gridline-color: #e6eef9;
+  border: 1px solid #e1e9f5;
+}
+
+/* Primary / Secondary button variants */
+QPushButton#segmentationBtn, QPushButton#uploadBtn, QPushButton#segmentBtn, QPushButton#classifyBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6cc4ff, stop:1 #2b7de9);
+  color: white;
+  font-size: 11pt;
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+
+QPushButton#roiBtn, QPushButton#backBtn, QPushButton#opticalBtn, QPushButton#ramanBtn {
+  background: transparent;
+  color: #2b7de9;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+/* Make ROI / Module buttons more colorful */
+QPushButton#roiBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7be3c7, stop:1 #2a9d7a);
+  color: white;
+  border-radius: 10px;
+}
+
+QPushButton#opticalBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #c39cff, stop:1 #7a4bd6);
+  color: white;
+  border-radius: 10px;
+}
+
+QPushButton#ramanBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd29a, stop:1 #ff8a3d);
+  color: white;
+  border-radius: 10px;
+}
+
+/* Disabled state */
+QPushButton:disabled {
+  background: #dfeaf9;
+  color: #9aa7bf;
+}
+
+/* Confirm/Cancel buttons in ROI dialog */
+QPushButton#confirmBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6ee26b, stop:1 #28b228);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+QPushButton#cancelBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff7b7b, stop:1 #e53939);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* Back button - yellow */
+QPushButton#backBtn {
+  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd86b, stop:1 #ffb200);
+  color: #222;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+/* Headers and sections */
+QWidget > QLabel#mainTitle {
+  font-size: 18pt;
+  letter-spacing: 0.2px;
+}
+
+/* Slight elevation for main workspace */
+QWidget#workspace {
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+QWidget#segmentationWorkspace {
+  background: #cfd5dc;
+}
+
+QFrame#controlPanel {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5ebf3;
+}
+
+QFrame#displayPanel {
+  background: #d6dbe2;
+  border-radius: 16px;
+  border: 1px solid #cad1db;
+}
+
+QFrame#displayCard {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e4e9f0;
+}
+
+QLabel#feedbackLabel,
+QLabel#displayHint,
+QLabel#cardTitle {
+  color: #56606f;
+}
+
+QTableWidget#analysisTable {
+  background: white;
+  gridline-color: #e4e9f0;
+  border: 1px solid #dfe6ef;
+  border-radius: 10px;
+}
