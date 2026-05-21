@@ -4,7 +4,7 @@ Base UI for Raman analysis workflows.
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
 
 class RamanWorkspace(QWidget):
@@ -15,8 +15,10 @@ class RamanWorkspace(QWidget):
 
         layout = QVBoxLayout()
 
+        header = QHBoxLayout()
+
         title = QLabel("Análisis Raman")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         title.setStyleSheet("font-size: 18px; font-weight: 600;")
 
         description = QLabel(
@@ -30,12 +32,16 @@ class RamanWorkspace(QWidget):
 
         back_btn = QPushButton("← Volver al inicio")
         back_btn.setObjectName("backBtn")
+        back_btn.setMinimumHeight(40)
         back_btn.clicked.connect(self._on_back)
 
-        layout.addWidget(title)
+        header.addWidget(title)
+        header.addStretch()
+        header.addWidget(back_btn)
+
+        layout.addLayout(header)
         layout.addWidget(description)
         layout.addWidget(status)
         layout.addStretch()
-        layout.addWidget(back_btn)
 
         self.setLayout(layout)
